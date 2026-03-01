@@ -43,16 +43,16 @@ def set_dataref(sock, dref, value, var_type='f'):
 def subscribe_to_dref(sock, dref, freq=1):
     global _drefs
 
-    # print(f'Sending RREF request. {_drefs =}, {dref = }')
     if dref not in _drefs:
         _drefs.append(dref)
     idx = _drefs.index(dref)
+    # print(f'Sending RREF request. {_drefs =}, {dref = }, {idx = }')
 
     message = b'RREF\x00' 
     message += struct.pack('<i', freq) 
     message += struct.pack('<i', idx)
-    message += dref.encode()
-    message += b' ' * (413 - len(message))
+    message += dref.encode() + b'\x00' * (400 - len(dref.encode()))
+    # message += b'\x00' * (413 - len(message))
     res = sock.sendto(message, HOST)
     # print(f'RREF request sent. {_drefs =}')
 
@@ -64,9 +64,8 @@ def decode_message(msg):
                 f'Message should start with "RREF,", it starts with {msg[:5]}'
                 )
     res = list()
-    print('in_msg', msg)
     msg = msg[5:]
-    print('pruned_msg ', msg)
+    print('pruned_msg', msg)
     for m in batched(msg, n=8):
         m = bytes(m)
         idx, val = struct.unpack_from('<if', m)
@@ -82,9 +81,14 @@ def unsubscribe_all(sock):
         unsubscribe_from_dref(sock, d)
 
 def get_dataref_once(sock, dref):
-    subscribe_to_dref(sock, dref)
-    val = next(listen_to_port(sock, once=True))
-    val = decode_message(val)
+    subscribe_to_dref(sock, dref, freq=5)
+    for _ in range(10):
+        val = next(listen_to_port(sock, once=True))
+        val = decode_message(val)
+        time.sleep(1)
+        # print('Decoded:', val)
+        if any(i != 0.0 for _, i in val):
+            print('\nSUCCESS HELL YEAH\n')
     unsubscribe_from_dref(sock, dref)
     return val
 
@@ -111,16 +115,25 @@ if __name__ == '__main__':
         set_dataref(sock, 'sim/cockpit/autopilot/heading_mag', 180, 'f')
         time.sleep(1)
         set_dataref(sock, 'sim/cockpit/autopilot/heading_mag', 0, 'f')
-        time.sleep(1)
+        time.sleep(0)
     if True: # Check for subscriptions
-        set_dataref(sock, 'sim/cockpit/autopilot/heading_mag', 180, 'f')
-        print('HDG set 180')
+        # set_dataref(sock, 'sim/cockpit/autopilot/heading_mag', 180, 'f')
+        # print('HDG set 180')
         time.sleep(0.1)
-        print(get_dataref_once(sock, 'sim/cockpit/autopilot/heading_mag'))
+        print('RECEIVED:', get_dataref_once(sock, 'sim/cockpit/autopilot/heading_mag'))
         time.sleep(1)
 
-        set_dataref(sock, 'sim/cockpit/autopilot/heading_mag', 0, 'f')
-        print('HDG set 0')
+        # set_dataref(sock, 'sim/cockpit/autopilot/heading_mag', 0, 'f')
+        # print('HDG set 0')
         time.sleep(0.1)
-        print(get_dataref_once(sock, 'sim/cockpit/autopilot/heading_mag'))
+        print('RECEIVED:', get_dataref_once(sock, 'sim/cockpit/autopilot/heading_mag'))
+        print('RECEIVED:', get_dataref_once(sock, 'sim/cockpit/radios/com1_freq_hz'))
+        exit()
+        subscribe_to_dref(sock, 'sim/cockpit/autopilot/heading_mag', freq=5)
+        subscribe_to_dref(sock, 'sim/cockpit/radios/com1_freq_hz', freq=5)
+        for _ in range(1):
+            val = next(listen_to_port(sock, once=True))
+            val = decode_message(val)
+            time.sleep(1)
+            print('Decoded:', val)
     unsubscribe_all(sock)
