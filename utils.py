@@ -46,7 +46,7 @@ def subscribe_to_dref(sock, dref, freq=1):
     if dref not in _drefs:
         _drefs.append(dref)
     idx = _drefs.index(dref)
-    # print(f'Sending RREF request. {_drefs =}, {dref = }, {idx = }')
+    print(f'Sending RREF request. {_drefs = }, {dref = }, {idx = }, {freq = }')
 
     message = b'RREF\x00' 
     message += struct.pack('<i', freq) 
@@ -82,15 +82,19 @@ def unsubscribe_all(sock):
 
 def get_dataref_once(sock, dref):
     subscribe_to_dref(sock, dref, freq=5)
-    for _ in range(10):
+    for _ in range(1):
         val = next(listen_to_port(sock, once=True))
         val = decode_message(val)
-        time.sleep(1)
+        # time.sleep(1)
         # print('Decoded:', val)
-        if any(i != 0.0 for _, i in val):
-            print('\nSUCCESS HELL YEAH\n')
     unsubscribe_from_dref(sock, dref)
     return val
+
+def get_dataref_blocking(sock, dref, freq=5):
+    subscribe_to_dref(sock, dref, freq)
+    for resp in listen_to_port(sock, once=False):
+        val = decode_message(resp)
+        print('Decoded:', val)
 
 def listen_to_port(sock, once=False):
     # BUFFER_SIZE = 4096
@@ -119,21 +123,10 @@ if __name__ == '__main__':
     if True: # Check for subscriptions
         # set_dataref(sock, 'sim/cockpit/autopilot/heading_mag', 180, 'f')
         # print('HDG set 180')
-        time.sleep(0.1)
-        print('RECEIVED:', get_dataref_once(sock, 'sim/cockpit/autopilot/heading_mag'))
-        time.sleep(1)
 
         # set_dataref(sock, 'sim/cockpit/autopilot/heading_mag', 0, 'f')
         # print('HDG set 0')
-        time.sleep(0.1)
-        print('RECEIVED:', get_dataref_once(sock, 'sim/cockpit/autopilot/heading_mag'))
-        print('RECEIVED:', get_dataref_once(sock, 'sim/cockpit/radios/com1_freq_hz'))
-        exit()
-        subscribe_to_dref(sock, 'sim/cockpit/autopilot/heading_mag', freq=5)
-        subscribe_to_dref(sock, 'sim/cockpit/radios/com1_freq_hz', freq=5)
-        for _ in range(1):
-            val = next(listen_to_port(sock, once=True))
-            val = decode_message(val)
-            time.sleep(1)
-            print('Decoded:', val)
+        print('\nRECEIVED:', get_dataref_once(sock, 'sim/cockpit/radios/transponder_code'), '\n')
+        time.sleep(3)
+        print('\nRECEIVED:', get_dataref_once(sock, 'sim/cockpit/autopilot/heading_mag'), '\n')
     unsubscribe_all(sock)
