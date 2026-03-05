@@ -145,7 +145,7 @@ class XPConnector:
         res = self.sock.sendto(message, (self.host_ip, self.send_port))
         return res
     
-    def get_datarefs(self, *requested_datarefs):
+    def get_datarefs(self, *requested_datarefs, is_blocking=True):
         '''
         Retrieves the values of the provided datarefs. Note, that all of them 
             have to be subscribed to beforehand. If the dataref hasn't been sent 
@@ -162,13 +162,11 @@ class XPConnector:
                 raise Exception('Dataref is not subscribed to, '
                                 'you can only get subscribed datarefs.')
         with self._datarefs_lock:
-            while any(d not in self._datarefs.keys() for d in requested_datarefs):
-                print('Waiting...')
-                # self._datarefs_lock.release()
+            while is_blocking and any(
+                    d not in self._datarefs.keys() for d in requested_datarefs
+                    ):
                 self._dataref_update_condition.wait()
-                # self._datarefs_lock.acquire()
-            vals = [self._datarefs[key] for key in requested_datarefs]
-        # self._datarefs_lock.release()
+            vals = [self._datarefs.get(key, None) for key in requested_datarefs]
         return vals
 
     def get_dataref(self, requested_dataref):
