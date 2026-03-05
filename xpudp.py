@@ -2,6 +2,7 @@ import socket
 import struct
 import threading
 import time
+from itertools import batched
 
 
 class XPConnector:
@@ -12,25 +13,31 @@ class XPConnector:
         self.receive_port = receive_port
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.bind((self.host_ip, self.receive_port))
         self.sock.setblocking(False)
-        sock.bind((self.host_ip, self.receive_port))
 
         # PRIVATE VARIABLES
         self._drefs = list()
+        self._stop_event = threading.Event()
         self._listener = threading.Thread(
                 target=self._port_listener,
                 args=(self.sock, listen_freq),
                 kwargs={}
             )
         self._listener.start()
-        self._stop_event = threading.Event()
 
         self._datarefs = dict()
 
         # SEMAPHORES
         self._datarefs_sem = threading.Semaphore()
 
-    def __del__(self):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def close(self):
         for d in self._drefs:
             self.subscribe_to_dataref(d, freq=0)
         self._stop_event.set()
@@ -60,39 +67,51 @@ class XPConnector:
         for m in batched(msg, n=8):
             m = bytes(m)
             idx, val = struct.unpack_from('<if', m)
+            if idx > len(self._drefs):
+                raise Exception(
+                        f'Subscriptions running in the background. pyXPUDP works'
+                        ' only with no subscriptions running in the background. '
+                        'Restart the simulator and ensure that no other process '
+                        'is requesting datarefs from X-Plane.'
+                        )
             res.append((self._drefs[idx], val))
         return res
 
 
 
     def send_command(self, command: str):
-        msg = b'CMND\x00' + command.encode()
+        message = b'CMND\x00' + command.encode()
         res = self.sock.sendto(message, (self.host_ip, self.send_port))
         return res
 
     def set_dataref(self, dataref, value, var_type='f'):
         message = b'DREF\x00' 
         message += struct.pack('=' + var_type, value) 
-        message += dref.encode() + b'\0xx'
+        message += dataref.encode() + b'\0xx'
         message += b' ' * (509 - len(message))
         res = self.sock.sendto(message, (self.host_ip, self.send_port))
         return res
 
     def subscribe_to_dataref(self, dataref, freq=1):
         if dataref not in self._drefs:
-            _drefs.append(dataref)
+            self._drefs.append(dataref)
         idx = self._drefs.index(dataref)
         message = b'RREF\x00' 
         message += struct.pack('<i', freq) 
         message += struct.pack('<i', idx)
-        message += dref.encode() + b'\x00' * (400 - len(dref.encode()))
-        res = self.sock.sendto(message, HOST)
+        message += dataref.encode() 
+        message += b'\x00' * (400 - len(dataref.encode()))
+        res = self.sock.sendto(message, (self.host_ip, self.send_port))
         return res
     
-    def get_dataref(self, *requested_datarefs):
-        if any(d not in self._drefs for d in requested_datarefs):
-            throw Exception('Dataref is not subscribed to, you can only get subscribed datarefs.')
+    def get_datarefs(self, *requested_datarefs):
+        for d in requested_datarefs:
+            if d not in self._drefs:
+                raise Exception('Dataref is not subscribed to, '
+                                'you can only get subscribed datarefs.')
         self._datarefs_sem.acquire()
-        vals = [self._datarefs_sem[key] for key in requested_datarefs]
+        vals = [self._datarefs[key] for key in requested_datarefs]
         self._datarefs_sem.release()
         return vals
+    def get_dataref(self, requested_dataref):
+        return self.get_datarefs(requested_dataref)[0]
