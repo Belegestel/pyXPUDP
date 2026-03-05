@@ -157,20 +157,23 @@ class XPConnector:
 
     def get_datarefs(self, *requested_datarefs, is_blocking=True):
         '''
-        Retrieves the values of the provided datarefs. Note, that all of them 
-            have to be subscribed to beforehand. If the dataref hasn't been sent 
+        Retrieves the values of the provided datarefs. If the dataref hasn't been sent 
             yet, this will block the code until it is received. This behavior can 
             be changed to returning a null value with the `is_blocking` parameter.
+            If the dataref hasn't been subscribed to yet, the function automatically 
+            subscribes to it. In that case, it'll be blocking regardless of the 
+            `is_blocking` value.
         requested_datarefs: one or more datarefs that the user desires to retrieve.
         is_blocking: parameter that allows the user to either block the code (default)
             or to return a null value whenever the desired dataref hasn't been 
             received yet.
         Returns: list of retrieved dataref values, in order.
         '''
-        for d in requested_datarefs:
-            if d not in self._drefs:
-                raise Exception('Dataref is not subscribed to, '
-                                'you can only get subscribed datarefs.')
+        missing_datarefs = [d for d in requested_datarefs if d not in self._drefs]
+        if len(missing_datarefs) != 0:
+            is_blocking = True 
+            self._drefs.extend(missing_datarefs)
+            self.subscribe_to_datarefs(*missing_datarefs)
         with self._datarefs_lock:
             while is_blocking and any(
                     d not in self._datarefs.keys() for d in requested_datarefs

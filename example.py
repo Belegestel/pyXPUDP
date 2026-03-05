@@ -10,8 +10,8 @@ with XPConnector('127.0.0.1', 49000, 49001) as conn:
     sleep(2)
     conn.set_dataref('sim/cockpit/autopilot/heading_mag', 0)
 
-    conn.subscribe_to_dataref('sim/cockpit/autopilot/heading_mag')
+    #conn.subscribe_to_dataref('sim/cockpit/autopilot/heading_mag')
     while (val := conn.get_dataref('sim/cockpit/autopilot/heading_mag')) < 180:
+        print(f'Heading {val} less than 180!')
         sleep(1)
-        print(f'Nope, value {val} less than 180!')
     print('Done :D')
