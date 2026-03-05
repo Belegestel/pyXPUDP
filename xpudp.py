@@ -133,6 +133,7 @@ class XPConnector:
             request with `freq = 0`. All datarefs are automatically unsubscribed when 
             leaving the `with` block or when calling `close()`.
         dataref: dataref to subscribe to.
+        freq: frequency of X-Plane sending the data
         '''
         if dataref not in self._drefs:
             self._drefs.append(dataref)
@@ -144,7 +145,16 @@ class XPConnector:
         message += b'\x00' * (400 - len(dataref.encode()))
         res = self.sock.sendto(message, (self.host_ip, self.send_port))
         return res
-    
+
+    def subscribe_to_datarefs(self, *datarefs, freq=1):
+        '''
+        Generalization of the `subscribe_to_dataref` method. Allows the script to 
+            subscribe to multiple datarefs at once. 
+        freq: frequency of X-Plane sending the data
+        '''
+        for d in datarefs:
+            self.subscribe_to_dataref(d, freq)
+
     def get_datarefs(self, *requested_datarefs, is_blocking=True):
         '''
         Retrieves the values of the provided datarefs. Note, that all of them 
