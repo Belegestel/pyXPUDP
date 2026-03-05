@@ -28,7 +28,12 @@ class XPConnector:
 
         # PRIVATE VARIABLES
         self._drefs = list()
+        self._datarefs = dict()
+
+        self._datarefs_lock = threading.Lock()
+        self._dataref_update_condition = threading.Condition(self._datarefs_lock)
         self._stop_event = threading.Event()
+
         self._listener = threading.Thread(
                 target=self._port_listener,
                 args=(self.sock, listen_freq),
@@ -36,10 +41,6 @@ class XPConnector:
             )
         self._listener.start()
 
-        self._datarefs = dict()
-
-        # SEMAPHORES
-        self._datarefs_sem = threading.Semaphore()
 
     def __enter__(self):
         return self
@@ -61,14 +62,19 @@ class XPConnector:
 
     def _port_listener(self, sock, freq):
         BUFFER_SIZE = 65534
+        has_updated = False
         while not self._stop_event.is_set():
             try:
                 data, addr = sock.recvfrom(BUFFER_SIZE)
-                for k, v in self._decode_message(data):
-                    self._datarefs_sem.acquire()
-                    self._datarefs[k] = v
-                    self._datarefs_sem.release()
+                with self._datarefs_lock:
+                    for k, v in self._decode_message(data):
+                        self._datarefs[k] = v
+                has_updated = True
             except BlockingIOError:
+                if has_updated: # end of data stream
+                    with self._datarefs_lock:
+                        self._dataref_update_condition.notify_all()
+                has_updated = False
                 time.sleep(1/freq)
 
     def _decode_message(self, msg):
@@ -155,9 +161,14 @@ class XPConnector:
             if d not in self._drefs:
                 raise Exception('Dataref is not subscribed to, '
                                 'you can only get subscribed datarefs.')
-        self._datarefs_sem.acquire()
-        vals = [self._datarefs[key] for key in requested_datarefs]
-        self._datarefs_sem.release()
+        with self._datarefs_lock:
+            while any(d not in self._datarefs.keys() for d in requested_datarefs):
+                print('Waiting...')
+                # self._datarefs_lock.release()
+                self._dataref_update_condition.wait()
+                # self._datarefs_lock.acquire()
+            vals = [self._datarefs[key] for key in requested_datarefs]
+        # self._datarefs_lock.release()
         return vals
 
     def get_dataref(self, requested_dataref):
