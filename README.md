@@ -29,7 +29,8 @@ with XPConnector() as conn:
 
 ### Subscribe to dataref
 Subscribing to dataref allows you to fetch its value later on. Fetching without previous subscription automatically subscribes with the frequency of 1Hz.
-Pass the dataref and then, optionally, the frequency, at which X-Plane is to send the data.
+Pass the dataref and then, optionally, the frequency, at which X-Plane is to send the data. 
+To unsubscribe, send the subscription message with `freq=0`.
 ```py 
 with XPConnector() as conn:
     conn.subscribe_to_dataref('sim/cockpit/autopilot/heading_mag')
