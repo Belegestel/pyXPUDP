@@ -3,7 +3,7 @@ requires = ["hatchling >= 1.26"]
 build-backend = "hatchling.build"
 
 [project]
-name = "pyXPUDP"
+name = "XPUDP"
 version = "0.0.1"
 authors = [
   { name="Wojciech Dudziński" },
@@ -21,7 +21,6 @@ classifiers = [
     "Operating System :: OS Independent",
     "Development Status :: 4 - Beta",
     "Topic :: Communications",
-    "Topic :: Internet :: UDP",
     "Topic :: Games/Entertainment :: Simulation",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
@@ -31,3 +30,6 @@ license-files = ["LICEN[CS]E*"]
 [project.urls]
 Homepage = "https://github.com/Belegestel/pyXPUDP"
 Issues = "https://github.com/Belegestel/pyXPUDP/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
