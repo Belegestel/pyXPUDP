@@ -32,4 +32,4 @@ Homepage = "https://github.com/Belegestel/pyXPUDP"
 Issues = "https://github.com/Belegestel/pyXPUDP/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["pyXPUDP/src"]
+packages = ["src/pyXPUDP"]
