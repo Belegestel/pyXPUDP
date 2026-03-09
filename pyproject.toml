@@ -3,7 +3,7 @@ requires = ["hatchling >= 1.26"]
 build-backend = "hatchling.build"
 
 [project]
-name = "XPUDP"
+name = "pyXPUDP"
 version = "0.0.1"
 authors = [
   { name="Wojciech Dudziński" },
