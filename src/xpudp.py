@@ -30,6 +30,8 @@ class XPConnector:
         self._drefs = list()
         self._datarefs = dict()
 
+        self._drefs_lock = threading.Lock()
+
         self._datarefs_lock = threading.Lock()
         self._dataref_update_condition = threading.Condition(self._datarefs_lock)
         self._stop_event = threading.Event()
@@ -48,12 +50,17 @@ class XPConnector:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
+    def _get_drefs(self):
+        with self._drefs_lock:
+            return self._drefs.copy()
+
+
     def close(self):
         '''
         When not created with the `with` syntax, close() must be called when exiting
         the program. Otherwise, some threads will keep running indefinitely.
         '''
-        for d in self._drefs:
+        for d in self._get_drefs():
             self.subscribe_to_dataref(d, freq=0)
         self._stop_event.set()
         self._listener.join()
@@ -84,17 +91,18 @@ class XPConnector:
                     )
         res = list()
         msg = msg[5:]
+        drefs = self._get_drefs()
         for m in batched(msg, n=8):
             m = bytes(m)
             idx, val = struct.unpack_from('<if', m)
-            if idx > len(self._drefs):
+            if idx > len(drefs):
                 raise Exception(
                         f'Subscriptions running in the background. pyXPUDP works'
                         ' only with no subscriptions running in the background. '
                         'Restart the simulator and ensure that no other process '
                         'is requesting datarefs from X-Plane.'
                         )
-            res.append((self._drefs[idx], val))
+            res.append((drefs[idx], val))
         return res
 
 
@@ -135,9 +143,11 @@ class XPConnector:
         dataref: dataref to subscribe to.
         freq: frequency of X-Plane sending the data
         '''
-        if dataref not in self._drefs:
-            self._drefs.append(dataref)
-        idx = self._drefs.index(dataref)
+        drefs = self._get_drefs()
+        if dataref not in drefs:
+            with self._drefs_lock:
+                drefs.append(dataref)
+        idx = drefs.index(dataref)
         message = b'RREF\x00' 
         message += struct.pack('<i', freq) 
         message += struct.pack('<i', idx)
@@ -169,10 +179,12 @@ class XPConnector:
             received yet.
         Returns: list of retrieved dataref values, in order.
         '''
-        missing_datarefs = [d for d in requested_datarefs if d not in self._drefs]
+        drefs = self._get_drefs()
+        missing_datarefs = [d for d in requested_datarefs if d not in drefs]
         if len(missing_datarefs) != 0:
             is_blocking = True 
-            self._drefs.extend(missing_datarefs)
+            with self._drefs_lock:
+                self._drefs.extend(missing_datarefs)
             self.subscribe_to_datarefs(*missing_datarefs)
         with self._datarefs_lock:
             while is_blocking and any(
