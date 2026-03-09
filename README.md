@@ -6,7 +6,7 @@ To install the package, simply type in your terminal
 python3 -m pip install pyxpudp
 ```
 ## Python API Documentation
-The central point of the library is the `XPConnector` X-Plane connection object. It can be used either by normally creating the object and calling `.close()` to terminate the connection, or you can use the `with` construction, as in the [example file](src/example.py). At the moment, it implements a few basic methods, as described below. All of the snippets should be functional in the default C172.
+The central point of the library is the `XPConnector` X-Plane connection object. It can be used either by normally creating the object and calling `.close()` to terminate the connection, or you can use the `with` construction, as in the [example file](https://github.com/Belegestel/pyXPUDP/blob/master/src/example.py). At the moment, it implements a few basic methods, as described below. All of the snippets should be functional in the default C172.
 
 To get the object, simply call 
 ```
