@@ -22,7 +22,8 @@ Of course, it's allowed to specify :
 ### Send command
 Execute a command.
 ```py 
-with XPConnector()    conn.send_command('sim/flight_controls/flaps_down')
+with XPConnector() as conn: 
+    conn.send_command('sim/flight_controls/flaps_down')
 ```
 
 ### Set dataref 
