@@ -3,17 +3,27 @@ The goal of this package is to allow for high-level, abstract communication with
 ## Python API Documentation
 The central point of the library is the `XPConnector` X-Plane connection object. It can be used either by normally creating the object and calling `.close()` to terminate the connection, or you can use the `with` construction, as in the [example file](src/example.py). At the moment, it implements a few basic methods, as described below. All of the snippets should be functional in the default C172.
 
+To get the object, simply call 
+```
+with XPConnector():
+    pass
+```
+Of course, it's allowed to specify :
+- `host_ip` (default `'localhost'`)
+- `send_port` (port, to which the messages will be sent, default `49000`)
+- `receive_port` (port, that will receive messages from X-Plane, default `49001`)
+- `listen_freq` (frequency of checking for new messages from X-Plane)
+
 ### Send command
 Execute a command.
 ```py 
-with XPConnector('localhost', 49000, 49001) as conn:
-    conn.send_command('sim/flight_controls/flaps_down')
+with XPConnector()    conn.send_command('sim/flight_controls/flaps_down')
 ```
 
 ### Set dataref 
 Pass the dataref name, then value. Then, optionally the dataref type.
 ```py 
-with XPConnector('localhost', 49000, 49001) as conn:
+with XPConnector() as conn:
     conn.set_dataref('sim/cockpit/autopilot/heading_mag', 180)
 ```
 
@@ -21,7 +31,7 @@ with XPConnector('localhost', 49000, 49001) as conn:
 Subscribing to dataref allows you to fetch its value later on. Fetching without previous subscription automatically subscribes with the frequency of 1Hz.
 Pass the dataref and then, optionally, the frequency, at which X-Plane is to send the data.
 ```py 
-with XPConnector('localhost', 49000, 49001) as conn:
+with XPConnector() as conn:
     conn.subscribe_to_dataref('sim/cockpit/autopilot/heading_mag')
 ```
 
@@ -29,7 +39,7 @@ with XPConnector('localhost', 49000, 49001) as conn:
 To get the value of a single dataref, pass the dataref name. Optionally you can pass the is_blocking parameter - if it's `True` (default) the code will block until the dataref is received. If it's `False`, the requested dataref will return `None` if it has not been received yet. 
 If the dataref hasn't been subscribed to before, it'll automatically subscribe at the frequency of 1Hz. Note, that in this case, the `is_blocking` is forced to be `True`.
 ```py 
-with XPConnector('localhost', 49000, 49001) as conn:
+with XPConnector() as conn:
     value = conn.get_dataref(
         'sim/cockpit/autopilot/heading_mag',
         is_blocking=False
@@ -40,7 +50,7 @@ with XPConnector('localhost', 49000, 49001) as conn:
 This function is a simple way to subscribe to multiple datarefs.
 Pass the dataref names and then, optionally, the frequency (keyword argument).
 ```py 
-with XPConnector('localhost', 49000, 49001) as conn:
+with XPConnector() as conn:
     conn.subscribe_to_datarefs(
         'sim/cockpit/autopilot/heading_mag',
         'sim/cockpit/radios/transponder_code',
@@ -52,7 +62,7 @@ with XPConnector('localhost', 49000, 49001) as conn:
 This function is a simple way to subscribe to multiple datarefs.
 Pass the dataref names and then, optionally, the is_blocking value (keyword argument). The last argument is documented in the `get_dataref` section.
 ```py 
-with XPConnector('localhost', 49000, 49001) as conn:
+with XPConnector() as conn:
     received_datarefs = conn.get_datarefs(
         'sim/cockpit/autopilot/heading_mag',
         'sim/cockpit/radios/transponder_code',
@@ -63,6 +73,6 @@ with XPConnector('localhost', 49000, 49001) as conn:
 ### Close the connection 
 If not using the `with` construction, close the connection manually. Otherwise, the background threads will not terminate.
 ```py
-conn = XPConnector('localhost', 49000, 49001)
+conn = XPConnector()
 conn.close()
 ```
