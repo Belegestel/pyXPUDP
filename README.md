@@ -1,5 +1,10 @@
 # X-Plane UDP
 The goal of this package is to allow for high-level, abstract communication with X-Plane via UDP without having to configure the connections manually. It is verified to work with X-Plane 12.4.0.
+## Installation 
+To install the package, simply type in your terminal 
+```
+python3 -m pip install pyxpudp
+```
 ## Python API Documentation
 The central point of the library is the `XPConnector` X-Plane connection object. It can be used either by normally creating the object and calling `.close()` to terminate the connection, or you can use the `with` construction, as in the [example file](src/example.py). At the moment, it implements a few basic methods, as described below. All of the snippets should be functional in the default C172.
 
