@@ -10,17 +10,17 @@ class XPConnector:
     Class, that serves as the main connection between the python script and X-Plane.
     '''
 
-    def __init__(self, host_ip, send_port, receive_port, listen_freq=5):
+    def __init__(self, host_ip=None, send_port=None, receive_port=None, listen_freq=5):
         '''
         host_ip: IP address of the machine on which X-Plane is running
         send_port: port, to which the messages are sent (on which X-Plane is listening)
             Default is 49000
         receive_port: port, which receives messages from X-Plane. Default is 49001
-        listen_freq: frequency, at which new messages are checked
+        listen_freq: frequency, at which a background thread checks for new messages 
         '''
-        self.host_ip = host_ip 
-        self.send_port = send_port
-        self.receive_port = receive_port
+        self.host_ip = host_ip if host_ip is not None else 'localhost'
+        self.send_port = send_port if send_port is not None else 49000
+        self.receive_port = receive_port if receive_port is not None else 49001
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((self.host_ip, self.receive_port))
@@ -182,10 +182,10 @@ class XPConnector:
             vals = [self._datarefs.get(key, None) for key in requested_datarefs]
         return vals
 
-    def get_dataref(self, requested_dataref):
+    def get_dataref(self, requested_dataref, is_blocking=False):
         '''
         A simplified version of `get_datarefs` that fetches a single dataref only.
         requested_dataref: dataref the user desires to retrieve
         Returns: the value of the dataref
         '''
-        return self.get_datarefs(requested_dataref)[0]
+        return self.get_datarefs(requested_dataref, is_blocking=is_blocking)[0]
