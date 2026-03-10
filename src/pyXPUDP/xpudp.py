@@ -23,7 +23,7 @@ class XPConnector:
         self.receive_port = receive_port if receive_port is not None else 49001
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind((self.host_ip, self.receive_port))
+        self.sock.bind(('0.0.0.0', self.receive_port))
         self.sock.setblocking(False)
 
         # PRIVATE VARIABLES
@@ -146,7 +146,7 @@ class XPConnector:
         drefs = self._get_drefs()
         if dataref not in drefs:
             with self._drefs_lock:
-                drefs.append(dataref)
+                self._drefs.append(dataref)
         idx = drefs.index(dataref)
         message = b'RREF\x00' 
         message += struct.pack('<i', freq) 
