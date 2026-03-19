@@ -10,20 +10,22 @@ class XPConnector:
     Class, that serves as the main connection between the python script and X-Plane.
     '''
 
-    def __init__(self, host_ip=None, send_port=None, receive_port=None, listen_freq=5):
+    def __init__(self, host_ip=None, send_port=49000, listen_ip='0.0.0.0', receive_port=0, listen_freq=5):
         '''
         host_ip: IP address of the machine on which X-Plane is running
         send_port: port, to which the messages are sent (on which X-Plane is listening)
             Default is 49000
-        receive_port: port, which receives messages from X-Plane. Default is 49001
+        listen_ip: IP at which the client will listen to X-Plane responses, default 0.0.0.0
+            (therefore messages to the selected port coming to all possible IPs)
+        receive_port: port, on which the client receives messages from X-Plane. 
+            Default is 0 (system assigned)
         listen_freq: frequency, at which a background thread checks for new messages 
         '''
         self.host_ip = host_ip if host_ip is not None else 'localhost'
-        self.send_port = send_port if send_port is not None else 49000
-        self.receive_port = receive_port if receive_port is not None else 49001
+        self.send_port = send_port 
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind(('0.0.0.0', self.receive_port))
+        self.sock.bind((listen_ip, receive_port))
         self.sock.setblocking(False)
 
         # PRIVATE VARIABLES
