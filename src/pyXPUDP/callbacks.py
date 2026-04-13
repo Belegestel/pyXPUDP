@@ -7,14 +7,15 @@ class _CallbackHandle():
         self._key = key
         self._id = id
         self._dispatcher = dispatcher
-        self._is_up = True
+
+    def _is_valid(self):
+        return self._dispatcher._is_handle_valid(self._key, self._id)
 
     def remove(self):
-        if self._is_up:
+        if self._is_valid():
             self._dispatcher._remove_callback(key, id)
-            self._is_up = False
         else:
-            raise Exception('Callback has already been removed, you cannot remove it twice')
+            raise Exception('Callback has already been removed, you cannot remove it twice.')
 
 
 class _CallbackDispatcher():
@@ -38,6 +39,13 @@ class _CallbackDispatcher():
         funcs_to_run.extend(self._callbacks[key].items())
         for f in funcs_to_run:
             self._executor.submit(f, key, value)
+
+    def _is_handle_valid(self, key, id):
+        if key not in self._callbacks:
+            return False 
+        if id not in self._callbacks[key]:
+            return False 
+        return True
 
     def __del__(self):
         self._executor.shutdown(wait=False, cancel_futures=True)
