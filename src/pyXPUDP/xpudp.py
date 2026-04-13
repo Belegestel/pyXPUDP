@@ -40,8 +40,8 @@ class XPConnector:
         self.sock.settimeout(1 / listen_freq)
 
         # PRIVATE VARIABLES
-        self._drefs = list()
-        self._datarefs = dict()
+        self._drefs = list()    # Names of the datarefs
+        self._datarefs = dict() # Dict of datarefs name-value
 
         self._drefs_lock = threading.Lock()
 
@@ -219,16 +219,23 @@ class XPConnector:
         '''
         return self.get_datarefs(requested_dataref, is_blocking=is_blocking)[0]
 
-    def add_callback(self, callback, key=None):
+    def add_callback(self, callback, key=None, auto_subscribe=True):
         '''
+        Used to add a callback. It will be executed either when the dataref equals
+            to the optional `key` argument or whenever a new dataref update is received.
+            If the dataref is not subscribed to yet, it'll automatically be subscribed to, 
+            unless specified otherwise (`auto_subscribe=False`)
         callback: callback function. Should take two arguments: 
             - key (received dataref name) and 
             - value
         key: key filtering the callback execution. Function is ran only 
             with datarefs matching the key. If `None`, then the function is 
             ran regardless of the received dataref.
+        auto_subscribe: automatically subscribe to the dataref if it's not been subscribed 
+            to yet. Optional, defaults to `True`
         returns: callback handle:
             - has a remove() function that removes the callback
-        '
         '''
+        if key is not None and auto_subscribe and key not in self._get_drefs():
+            self.subscribe_to_dataref(key)
         return self._callback_dispatcher._add_callback(callback, key=key)
