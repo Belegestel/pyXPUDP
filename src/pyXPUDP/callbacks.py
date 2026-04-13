@@ -47,5 +47,11 @@ class _CallbackDispatcher():
             return False 
         return True
 
+    def _remove_all_callbacks(self, stop_scheduled=True):
+        self._executor.shutdown(wait=not stop_scheduled)
+        self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_thread_workers)
+        self._callbacks = {None: list()}
+
     def __del__(self):
         self._executor.shutdown(wait=False, cancel_futures=True)
+

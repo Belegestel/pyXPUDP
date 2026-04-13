@@ -239,3 +239,11 @@ class XPConnector:
         if key is not None and auto_subscribe and key not in self._get_drefs():
             self.subscribe_to_dataref(key)
         return self._callback_dispatcher._add_callback(callback, key=key)
+
+    def clear_callbacks(self, stop_scheduled=True):
+        '''
+        Used to clear all callbacks.
+        stop_scheduled: Defaults to `True`. If set to `False`, it doesn't stop the running
+            callbacks and lets them finish.
+        '''
+        self._callback_dispatcher._remove_all_callbacks(stop_scheduled)
