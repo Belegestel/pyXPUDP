@@ -4,13 +4,22 @@ import threading
 import time
 from itertools import batched
 
+from .callbacks import _CallbackDispatcher
+
 
 class XPConnector:
     '''
     Class, that serves as the main connection between the python script and X-Plane.
     '''
 
-    def __init__(self, host_ip=None, send_port=49000, listen_ip='0.0.0.0', receive_port=0, listen_freq=5):
+    def __init__(self,
+                 host_ip=None,
+                 send_port=49000,
+                 listen_ip='0.0.0.0',
+                 receive_port=0,
+                 listen_freq=5,
+                 max_callback_thread_workers=None
+                 ):
         '''
         host_ip: IP address of the machine on which X-Plane is running
         send_port: port, to which the messages are sent (on which X-Plane is listening)
@@ -20,6 +29,8 @@ class XPConnector:
         receive_port: port, on which the client receives messages from X-Plane. 
             Default is 0 (system assigned)
         listen_freq: frequency, at which a background thread checks for new messages 
+        max_callback_thread_workers: maximum number of threads handling the callbacks. 
+            Default is None (unlimited)
         '''
         self.host_ip = host_ip if host_ip is not None else 'localhost'
         self.send_port = send_port 
@@ -44,6 +55,9 @@ class XPConnector:
                 kwargs={}
             )
         self._listener.start()
+
+        # Callbacks 
+        self._callback_dispatcher = _CallbackDispatcher(max_callback_thread_workers)
 
 
     def __enter__(self):
@@ -78,6 +92,7 @@ class XPConnector:
                 with self._datarefs_lock:
                     for k, v in self._decode_message(data):
                         self._datarefs[k] = v
+                        self._callback_dispatcher._run_callbacks(k, v)
                 has_updated = True
             except (BlockingIOError, TimeoutError):
                 if has_updated: # end of data stream
@@ -203,3 +218,17 @@ class XPConnector:
         Returns: the value of the dataref
         '''
         return self.get_datarefs(requested_dataref, is_blocking=is_blocking)[0]
+
+    def add_callback(self, callback, key=None):
+        '''
+        callback: callback function. Should take two arguments: 
+            - key (received dataref name) and 
+            - value
+        key: key filtering the callback execution. Function is ran only 
+            with datarefs matching the key. If `None`, then the function is 
+            ran regardless of the received dataref.
+        returns: callback handle:
+            - has a remove() function that removes the callback
+        '
+        '''
+        return self._callback_dispatcher._add_callback(callback, key=key)
