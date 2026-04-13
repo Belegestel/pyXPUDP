@@ -1,7 +1,7 @@
 from xpudp import XPConnector
 from time import sleep
 
-with XPConnector('127.0.0.1', 49000) as conn:
+with XPConnector('127.0.0.1') as conn:
     conn.send_command('sim/flight_controls/flaps_down')
     sleep(3)
     conn.send_command('sim/flight_controls/flaps_up')
