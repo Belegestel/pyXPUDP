@@ -12,6 +12,7 @@ class _CallbackHandle():
     def remove(self):
         if self._is_up:
             self._dispatcher._remove_callback(key, id)
+            self._is_up = False
         else:
             raise Exception('Callback has already been removed, you cannot remove it twice')
 
