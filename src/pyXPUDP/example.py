@@ -1,4 +1,4 @@
-from xpudp import XPConnector
+from pyXPUDP import XPConnector
 from time import sleep
 
 with XPConnector('127.0.0.1') as conn:
