@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyXPUDP"
-version = "0.0.3"
+version = "0.0.3.1"
 authors = [
   { name="Wojciech Dudziński" },
 ]

@@ -240,9 +240,9 @@ class XPConnector:
             self.subscribe_to_dataref(key)
         return self._callback_dispatcher._add_callback(callback, key=key)
 
-    def clear_callbacks(self, stop_scheduled=True):
+    def remove_callbacks(self, stop_scheduled=True):
         '''
-        Used to clear all callbacks.
+        Used to remove all callbacks.
         stop_scheduled: Defaults to `True`. If set to `False`, it doesn't stop the running
             callbacks and lets them finish.
         '''

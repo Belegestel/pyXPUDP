@@ -83,3 +83,41 @@ If not using the `with` construction, close the connection manually. Otherwise, 
 conn = XPConnector()
 conn.close()
 ```
+
+## Callbacks 
+
+### Register a callback 
+```py 
+with XPConnector() as conn:
+    handle = conn.add_callback(func)
+```
+If the function is supposed to be ran only for a specific dataref, you can use the following syntax:
+```py 
+with XPConnector() as conn:
+    handle = conn.add_callback(func, key='sim/cockpit/autopilot/heading_mag')
+```
+
+### Close all callbacks 
+```py
+with XPConnector() as conn:
+    handle = conn.add_callback(func)
+    ...
+    conn.remove_callbacks()
+```
+If the function is supposed to wait for the scheduled callbacks to stop running:
+```py
+with XPConnector() as conn:
+    handle = conn.add_callback(func)
+    ...
+    conn.remove_callbacks(stop_scheduled=False)
+```
+
+### Handles
+Every callback returns a handle. This handle can be used to remove a callback:
+```py
+with XPConnector() as conn:
+    handle = conn.add_callback(func)
+    ...
+    handle.remove()
+```
+Be advised, removing a callback that's already been removed will result in an exception.
