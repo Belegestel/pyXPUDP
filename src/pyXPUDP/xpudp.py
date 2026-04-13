@@ -84,7 +84,7 @@ class XPConnector:
                     with self._datarefs_lock:
                         self._dataref_update_condition.notify_all()
                 has_updated = False
-                time.sleep(1/freq)
+                # time.sleep(1/freq)
 
     def _decode_message(self, msg):
         if not msg.startswith(b'RREF,'):
