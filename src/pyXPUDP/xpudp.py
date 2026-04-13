@@ -26,7 +26,7 @@ class XPConnector:
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((listen_ip, receive_port))
-        self.sock.setblocking(False)
+        self.sock.settimeout(1 / listen_freq)
 
         # PRIVATE VARIABLES
         self._drefs = list()
@@ -79,7 +79,7 @@ class XPConnector:
                     for k, v in self._decode_message(data):
                         self._datarefs[k] = v
                 has_updated = True
-            except BlockingIOError:
+            except (BlockingIOError, TimeoutError):
                 if has_updated: # end of data stream
                     with self._datarefs_lock:
                         self._dataref_update_condition.notify_all()
